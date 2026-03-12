@@ -1,26 +1,42 @@
+import numpy as np
+from pathlib import Path
+import sys
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 import reliefe
-import scipy.io as sio
 
-# Load the data first
-mat_obj = sio.loadmat("../data/mlc/Science1.mat")
-x = mat_obj['input_space']  ## scipy csr sparse matrix (or numpy dense)
-y = mat_obj['target_space']  ## scipy csr sparse matrix (or numpy dense)
+x = np.array([[1.0, 0.0, 0.2, 0.0], [0.9, 0.1, 0.1, 0.0],
+              [0.0, 1.0, 0.0, 0.0], [0.1, 0.9, 0.0, 0.0],
+              [0.0, 0.0, 1.0, 0.0], [0.0, 0.1, 0.9, 0.0],
+              [1.0, 1.0, 0.0, 0.0], [0.0, 1.0, 1.0, 0.0]])
+y = np.array([[1, 0, 0], [1, 0, 1], [0, 1, 0], [0, 1, 1], [0, 0, 1],
+              [1, 0, 1], [1, 1, 0], [0, 1, 1]])
 
-reliefE_instance = reliefe.ReliefE(determine_k_automatically=True,
+# Multi-label example with embedded input distances and embedded target space.
+reliefE_instance = reliefe.ReliefE(determine_k_automatically=False,
                                    embedding_based_distances=True,
-                                   num_iter=128,
-                                   verbose=True)
+                                   num_iter=8,
+                                   k=1,
+                                   mlc_distance="cosine",
+                                   LD_friendly=False,
+                                   samples=8,
+                                   verbose=False)
 
-# Initialize default ReliefE
-reliefE_instance.fit(x, y)  # Compute rankings
-print(reliefE_instance.feature_importances_
-      )  # rankings for features (same order as x)
+reliefE_instance.fit(x, y, embedding_method="SVD")  # Compute rankings
+print("Embedded input distances:",
+      reliefE_instance.feature_importances_.round(4).tolist())
 
-reliefE_instance = reliefe.ReliefE(determine_k_automatically=True,
-                                   num_iter=128,
-                                   verbose=True)
+reliefE_instance = reliefe.ReliefE(determine_k_automatically=False,
+                                   embedding_based_distances=False,
+                                   num_iter=8,
+                                   k=1,
+                                   mlc_distance="cosine",
+                                   samples=8,
+                                   verbose=False)
 
-# Initialize default ReliefE
-reliefE_instance.fit(x, y)  # Compute rankings
-print(reliefE_instance.feature_importances_
-      )  # rankings for features (same order as x)
+reliefE_instance.fit(x, y, embedding_method="SVD")
+print("Origin input distances:",
+      reliefE_instance.feature_importances_.round(4).tolist())
